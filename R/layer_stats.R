@@ -236,11 +236,7 @@ ly_boxplot <- function(fig, x, y = NULL, data = NULL,
       y <- as.character(y)
   }
 
-  args <- list(color = color, alpha = alpha, ...)
-
-  args <- resolve_color_alpha(args, has_line = TRUE, has_fill = TRUE)
-
-  fill_ind <- grepl("^fill_", names(args))
+ 
 
   if(is.null(y)) {
     xname <- " "
@@ -276,9 +272,27 @@ ly_boxplot <- function(fig, x, y = NULL, data = NULL,
 
   idx <- split(seq_along(x), group)
   for(ii in seq_along(idx)) {
+  
     bp <- boxplot.stats(x = x[idx[[ii]]], coef = coef)
 
     gp <- group[idx[[ii]][1]] ## doesn't work right now
+    
+    #switched the color handling to use a gp name on color vector.
+    handle_color = function(color, alpha){
+		    args <- list(color = color, alpha = alpha, ...)
+  			args <- resolve_color_alpha(args, has_line = TRUE, has_fill = TRUE)
+        return(args)
+    }
+    if(!any(is.null(names(color)))){
+    	col = color[[gp]]
+    	alp = alpha[[gp]]
+    	args = handle_color(col, alp)
+    }else{
+    	args = handle_color(color,alpha)	
+    }
+    fill_ind <- grepl("^fill_", names(args))
+    
+    
     ## for lines and whiskers
     gpl <- paste(gp, ":0.4", sep = "")
     gpr <- paste(gp, ":0.6", sep = "")
@@ -287,6 +301,7 @@ ly_boxplot <- function(fig, x, y = NULL, data = NULL,
     hgt2 <- bp$stats[4] - bp$stats[3]
     md2 <- hgt2 / 2 + bp$stats[3]
 
+   
     fig <- do.call(ly_crect, c(list(fig = fig, x = rep(gp, 2), y = c(md1, md2), width = 0.9, height = c(hgt1, hgt2), xlab = xname, ylab = yname), args))
     fig <- do.call(ly_segments, c(list(fig = fig, x0 = c(gp, gp, gpr, gpr), y0 = c(bp$stats[1], bp$stats[4], bp$stats[1], bp$stats[5]), x1 = c(gp, gp, gpl, gpl), y1 = c(bp$stats[2], bp$stats[5], bp$stats[1], bp$stats[5])), args[!fill_ind]))
 
@@ -297,6 +312,7 @@ ly_boxplot <- function(fig, x, y = NULL, data = NULL,
 
   fig
 }
+
 
 # ly_violin
 
